@@ -50,7 +50,10 @@ export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, Q
     this.socket.addEventListener('message', async ({ data }) =>
     {
       const parsed: Payload = JSON.parse(data.toString());
-      logDebug(this.bot, 'websocket receives %o', parsed);
+      if (parsed.op !== Opcode.HEARTBEAT_ACK)
+      {
+        logDebug(this.bot, 'websocket receives %o', parsed);
+      }
       if (parsed.op === Opcode.HELLO)
       {
         const token = this.bot.config.authType === 'bearer'

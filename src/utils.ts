@@ -71,7 +71,11 @@ export function decodeGroupMessage(
   }
   payload.timestamp = new Date(date).valueOf();
   payload.guild = data.group_id && { id: data.group_id };
-  payload.user = { id: data.author.id, avatar: `https://q.qlogo.cn/qqapp/${bot.config.id}/${data.author.id}/640` };
+  payload.user = {
+    id: data.author.id,
+    name: data.author.username,
+    avatar: `https://q.qlogo.cn/qqapp/${bot.config.id}/${data.author.id}/640`,
+  };
   return message;
 }
 

@@ -1325,6 +1325,10 @@ export interface UserMessage
   id: string;
   author: {
     id: string;
+    username?: string;
+    bot?: boolean;
+    member_openid?: string;
+    union_openid?: string;
   };
   content: string;
   timestamp: string;

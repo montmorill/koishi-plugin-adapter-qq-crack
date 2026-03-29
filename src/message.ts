@@ -9,6 +9,32 @@ export const escapeMarkdown = (val: string) =>
   val
     .replace(/([\\`*_[\*_~`\]\-(#!>])/g, '\\$&');
 
+function getErrorCode(error: { response?: { data?: unknown; }; })
+{
+  const data = error.response?.data;
+  if (!data || typeof data !== 'object') return;
+  if ('err_code' in data && typeof data.err_code === 'number') return data.err_code;
+  if ('code' in data && typeof data.code === 'number') return data.code;
+}
+
+function getErrorMessage(error: { message?: string; response?: { data?: unknown; }; })
+{
+  const data = error.response?.data;
+  if (data && typeof data === 'object' && 'message' in data && typeof data.message === 'string')
+  {
+    return data.message;
+  }
+  return error.message;
+}
+
+// 统一生成更容易定位问题的发送异常信息。
+function createSendError(error: { message?: string; response?: { data?: unknown; }; })
+{
+  const code = getErrorCode(error);
+  const message = getErrorMessage(error) || 'unknown error';
+  return new Error(code ? `QQ 消息发送失败 [${code}] ${message}` : `QQ 消息发送失败 ${message}`);
+}
+
 export class QQGuildMessageEncoder<C extends Context = Context> extends MessageEncoder<C, QQGuildBot<C>>
 {
   private content: string = '';
@@ -326,13 +352,21 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
       } catch (e)
       {
         if (!this.bot.http.isError(e)) throw e;
-        this.errors.push(e);
-        if (!this.retry && this.bot.config.retryWhen.includes(e.response.data.code))
+        const code = getErrorCode(e);
+        if (!this.retry && code === 40054005 && typeof data.msg_seq === 'number')
         {
-          this.bot.logger.warn('%s retry message sending', this.session.cid);
+          data.msg_seq += 1;
+          this.bot.logger.warn('%s msg_seq duplicated, retry with msg_seq=%d', this.session.cid, data.msg_seq);
           this.retry = true;
-          await send();
+          return send();
         }
+        if (!this.retry && code !== undefined && this.bot.config.retryWhen.includes(code))
+        {
+          this.bot.logger.warn('%s retry message sending, code=%d', this.session.cid, code);
+          this.retry = true;
+          return send();
+        }
+        this.errors.push(createSendError(e));
       }
     };
     await send();
@@ -406,13 +440,14 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
     } catch (e)
     {
       if (!this.bot.http.isError(e)) throw e;
-      this.errors.push(e);
-      if (!this.retry && this.bot.config.retryWhen.includes(e.response.data.code))
+      const code = getErrorCode(e);
+      if (!this.retry && code !== undefined && this.bot.config.retryWhen.includes(code))
       {
-        this.bot.logger.warn('%s retry message sending', this.session.cid);
+        this.bot.logger.warn('%s retry file sending, code=%d', this.session.cid, code);
         this.retry = true;
-        await this.sendFile(type, attrs);
+        return this.sendFile(type, attrs);
       }
+      this.errors.push(createSendError(e));
     }
     this.retry = false;
     return res;

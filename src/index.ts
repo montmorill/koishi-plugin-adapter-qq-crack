@@ -1,3 +1,4 @@
+import { Context } from 'koishi';
 import * as QQ from './types';
 import { QQBot } from './bot';
 import { GroupInternal, GuildInternal } from './internal';
@@ -9,7 +10,23 @@ export * from './message';
 export * from './utils';
 export * from './ws';
 
-export default QQBot;
+export const name = 'adapter-qq-crack';
+export const reusable = true;
+export const inject = QQBot.inject;
+export const Config = QQBot.Config;
+
+export function apply(ctx: Context, config: QQBot.Config)
+{
+  return new QQBot(ctx, config);
+}
+
+export default {
+  name,
+  reusable,
+  inject,
+  Config,
+  apply,
+};
 
 type ParamCase<S extends string> =
   | S extends `${infer L}${infer R}`

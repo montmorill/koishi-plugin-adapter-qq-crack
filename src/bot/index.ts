@@ -178,7 +178,7 @@ export namespace QQBot
       id: Schema.string().description('机器人的账号ID。').required(),
       secret: Schema.string().description('机器人的密钥。').role('secret'),
       token: Schema.string().description('机器人的令牌。').role('secret'),
-      type: Schema.union(['public', 'private'] as const).description('机器人类型。').default('public'),
+      type: Schema.union(['public', 'private'] as const).description('机器人的类型。').default('public'),
       sandbox: Schema.boolean().description('是否开启沙箱模式。').default(false),
       endpoint: Schema.string().role('link').description('要连接的服务器地址。').default('https://api.sgroup.qq.com/'),
       authType: Schema.union(['bot', 'bearer'] as const).description('采用的验证方式。').default('bearer'),

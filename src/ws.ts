@@ -1,4 +1,4 @@
-import { Adapter, Context, Schema } from '@satorijs/core'
+import { Adapter, Context, Schema } from 'koishi'
 import { QQBot } from './bot'
 import { Opcode, Payload } from './types'
 import { adaptSession, decodeUser } from './utils'

@@ -1,4 +1,4 @@
-import { Bot, Context, HTTP, Universal } from '@satorijs/core'
+import { Bot, Context, HTTP, Universal } from 'koishi'
 import { QQBot } from '.'
 import { decodeChannel, decodeGuild, decodeGuildMember, decodeMessage, decodeUser } from '../utils'
 import { GuildInternal } from '../internal'

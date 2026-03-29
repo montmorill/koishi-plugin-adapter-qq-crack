@@ -1,10 +1,10 @@
-import { Adapter, Binary, Context, Schema, Universal } from '@satorijs/core'
+import { Adapter, Binary, Context, Schema, Universal } from 'koishi'
 import { getPublicKeyAsync, signAsync, verifyAsync } from '@noble/ed25519'
 import { QQBot } from './bot'
 import { Opcode, Payload } from './types'
 import { adaptSession } from './utils'
 import { IncomingHttpHeaders } from 'node:http'
-import { } from '@cordisjs/plugin-server'
+import { } from '@koishijs/plugin-server'
 
 export class HttpServer<C extends Context = Context> extends Adapter<C, QQBot<C>> {
   static inject = ['server']

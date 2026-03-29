@@ -1,4 +1,4 @@
-import { Bot, Context, h, Session, Universal } from '@satorijs/core'
+import { Bot, Context, h, Session, Universal } from 'koishi'
 import * as QQ from './types'
 import { QQBot } from './bot'
 

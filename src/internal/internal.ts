@@ -1,4 +1,4 @@
-import { Bot, Dict, HTTP, makeArray } from '@satorijs/core'
+import { Bot, Dict, HTTP, makeArray } from 'koishi'
 
 export class Internal {
   constructor(private bot: Bot, private http: () => HTTP) { }

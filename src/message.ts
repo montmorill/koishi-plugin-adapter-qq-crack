@@ -1,5 +1,5 @@
 import * as QQ from './types'
-import { Context, Dict, h, MessageEncoder } from '@satorijs/core'
+import { Context, Dict, h, MessageEncoder } from 'koishi'
 import { QQBot } from './bot'
 import { QQGuildBot } from './bot/guild'
 

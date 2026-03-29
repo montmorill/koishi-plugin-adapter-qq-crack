@@ -1,4 +1,4 @@
-import { Bot, Context, HTTP, Schema, Universal } from '@satorijs/core'
+import { Bot, Context, HTTP, Schema, Universal } from 'koishi'
 import { WsClient } from '../ws'
 import * as QQ from '../types'
 import { QQGuildBot } from './guild'

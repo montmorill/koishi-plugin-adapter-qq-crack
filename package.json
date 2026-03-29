@@ -28,6 +28,10 @@
     "im",
     "chat"
   ],
+  "devDependencies": {
+    "@noble/ed25519": "^2.2.3",
+    "koishi": "^4.18.9"
+  },
   "peerDependencies": {
     "koishi": "^4.18.9"
   }

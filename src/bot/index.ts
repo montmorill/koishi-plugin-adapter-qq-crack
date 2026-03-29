@@ -70,7 +70,7 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
     this.internal = new GroupInternal(this, () => this.http);
     if (config.protocol === 'websocket')
     {
-      this.ctx.plugin(WsClient, this as any);
+      this.ctx.plugin(WsClient, this as QQBot<C, QQBot.Config & WsClient.Options>);
     } else
     {
       this.ctx.plugin(HttpServer, this);
@@ -166,6 +166,7 @@ export namespace QQBot
     intents?: number;
     retryWhen: number[];
     manualAcknowledge: boolean;
+    loggerinfo: boolean;
     protocol: 'websocket' | 'webhook';
     path?: string;
     gatewayUrl?: string;
@@ -194,5 +195,8 @@ export namespace QQBot
       manualAcknowledge: Schema.boolean().description('手动响应回调消息。').default(false),
       gatewayUrl: Schema.string().role('link').description('覆写 WebSocket 地址。'),
     }).description('高级设置'),
+    Schema.object({
+      loggerinfo: Schema.boolean().default(false).description('调试模式').experimental(),
+    }).description('调试设置'),
   ] as const);
 }

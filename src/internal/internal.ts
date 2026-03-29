@@ -1,4 +1,5 @@
 import { Bot, Dict, HTTP, makeArray } from 'koishi';
+import { logDebug } from '../logger';
 
 export class Internal
 {
@@ -42,14 +43,14 @@ export class Internal
             const http = this.http();
             try
             {
-              this.bot.logger.debug(`${method} ${url} request: %o`, config);
+              logDebug(this.bot, `${method} ${url} request: %o`, config);
               const response = await http(url, { ...config, method });
-              this.bot.logger.debug(`${method} ${url} response: %o, trace id: %s`, response.data, response.headers.get('x-tps-trace-id'));
+              logDebug(this.bot, `${method} ${url} response: %o, trace id: %s`, response.data, response.headers.get('x-tps-trace-id'));
               return response.data;
             } catch (error)
             {
               if (!http.isError(error) || !error.response) throw error;
-              this.bot.logger.debug(`${method} ${url} response: %o, trace id: %s`, error.response.data, error.response.headers.get('x-tps-trace-id'));
+              logDebug(this.bot, `${method} ${url} response: %o, trace id: %s`, error.response.data, error.response.headers.get('x-tps-trace-id'));
               throw error;
             }
           };

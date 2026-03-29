@@ -6,6 +6,7 @@ import { GroupInternal, GuildInternal } from './internal';
 export { QQ };
 
 export * from './bot';
+export * from './logger';
 export * from './message';
 export * from './utils';
 export * from './ws';

@@ -2,6 +2,7 @@ import * as QQ from './types';
 import { Context, Dict, h, MessageEncoder } from 'koishi';
 import { QQBot } from './bot';
 import { QQGuildBot } from './bot/guild';
+import { logDebug } from './logger';
 
 export const escapeMarkdown = (val: string) =>
   val
@@ -37,7 +38,7 @@ export class QQGuildMessageEncoder<C extends Context = Context> extends MessageE
     if (this.passiveId) msg_id = this.passiveId;
 
     let r: Partial<QQ.Message.Response>;
-    this.bot.logger.debug('use form data %s', useFormData);
+    logDebug(this.bot, 'use form data %s', useFormData);
     try
     {
       if (useFormData)
@@ -98,7 +99,6 @@ export class QQGuildMessageEncoder<C extends Context = Context> extends MessageE
       }
     }
 
-    // this.bot.logger.debug(r)
     const session = this.bot.session();
     session.type = 'send';
     // await decodeMessage(this.bot, r, session.event.message = {}, session.event)

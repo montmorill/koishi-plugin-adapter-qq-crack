@@ -2,6 +2,7 @@ import { Adapter, Context, Schema } from 'koishi';
 import { QQBot } from './bot';
 import { Opcode, Payload } from './types';
 import { adaptSession, decodeUser } from './utils';
+import { logDebug } from './logger';
 
 export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, QQBot<C, QQBot.Config & WsClient.Options>>
 {
@@ -18,7 +19,7 @@ export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, Q
       const url = this.bot.config.gatewayUrl
         ? this.bot.config.gatewayUrl
         : (await this.bot.internal.getGateway()).url.replace('api.sgroup.qq.com', new URL(this.bot.config.endpoint).host);
-      this.bot.logger.debug('url: %s', url);
+      logDebug(this.bot, 'url: %s', url);
       return this.bot.http.ws(url);
     } catch (error)
     {
@@ -49,7 +50,7 @@ export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, Q
     this.socket.addEventListener('message', async ({ data }) =>
     {
       const parsed: Payload = JSON.parse(data.toString());
-      this.bot.logger.debug('websocket receives %o', parsed);
+      logDebug(this.bot, 'websocket receives %o', parsed);
       if (parsed.op === Opcode.HELLO)
       {
         const token = this.bot.config.authType === 'bearer'
@@ -116,13 +117,12 @@ export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, Q
         }
         const session = await adaptSession(this.bot, parsed);
         if (session) this.bot.dispatch(session);
-        // this.bot.logger.debug(session)
       }
     });
 
     this.socket.addEventListener('close', (e) =>
     {
-      this.bot.logger.debug('websocket closed, code %o, reason: %s', e.code, e.reason);
+      logDebug(this.bot, 'websocket closed, code %o, reason: %s', e.code, e.reason);
       if (e.code > 4000 && ![4008, 4009].includes(e.code))
       {
         this._sessionId = '';

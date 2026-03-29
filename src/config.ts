@@ -39,9 +39,7 @@ export const Config: Schema<Config> = Schema.intersect([
   Schema.object({
     id: Schema.string().description('机器人账号 ID。').required(),
     secret: Schema.string().description('机器人密钥。').role('secret'),
-    token: Schema.string().description('机器人令牌。').role('secret'),
     type: Schema.union(['public', 'private'] as const).description('机器人类型。').default('public'),
-    authType: Schema.union(['bot', 'bearer'] as const).description('采用的鉴权方式。').default('bearer'),
     intents: Schema.bitset(QQ.Intents).description('需要订阅的机器人事件。').default(defaultIntents),
     retryWhen: Schema.array(Number).description('发送消息遇到平台错误码时重试。').default([]),
     protocol: Schema.union(['websocket', 'webhook']).description('选择要使用的协议。').default('websocket'),
@@ -69,7 +67,7 @@ export const Config: Schema<Config> = Schema.intersect([
     gatewayUrl: Schema.string().role('link').description('覆盖 WebSocket 地址。'),
   }).description('进阶设置'),
   Schema.object({
-    autoStreamText: Schema.boolean().description('使用原生 Markdown 流式发送纯文本消息').default(false),
+    autoStreamText: Schema.boolean().description('使用原生 Markdown 流式发送纯文本消息。').default(false),
     loggerinfo: Schema.boolean().default(false).description('调试模式').experimental(),
   }).description('高级设置'),
 ] as const);

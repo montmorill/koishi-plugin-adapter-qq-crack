@@ -12,10 +12,7 @@ export class HttpServer<C extends Context = Context> extends Adapter<C, QQBot<C>
 
   async connect(bot: QQBot)
   {
-    if (bot.config.authType === 'bearer')
-    {
-      await bot.getAccessToken();
-    }
+    await bot.getAccessToken();
     await this.initialize(bot);
 
     bot.ctx.server.post(bot.config.path, async (ctx) =>

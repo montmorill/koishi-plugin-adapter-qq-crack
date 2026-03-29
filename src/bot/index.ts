@@ -29,7 +29,6 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
 
   private _token?: string;
   private _disposeTokenRefresh?: () => void;
-  private _warnedLegacyAuth = false;
 
   constructor(ctx: C, config: T)
   {
@@ -75,13 +74,6 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
       delete this.ctx.bots[this.guildBot.sid];
     }
     await super.stop();
-  }
-
-  private warnLegacyAuth()
-  {
-    if (this.config.authType !== 'bot' || this._warnedLegacyAuth) return;
-    this._warnedLegacyAuth = true;
-    this.logger.warn('QQ 官方已禁用固定 Token 鉴权，当前 bot 模式将自动改用 AccessToken。');
   }
 
   async _ensureAccessToken()
@@ -130,14 +122,12 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
 
   async prepareRequestAuthorization()
   {
-    this.warnLegacyAuth();
     const token = await this.getAccessToken();
     this.http.config.headers.Authorization = `QQBot ${token}`;
   }
 
   async getWebSocketToken()
   {
-    this.warnLegacyAuth();
     return `QQBot ${await this.getAccessToken()}`;
   }
 

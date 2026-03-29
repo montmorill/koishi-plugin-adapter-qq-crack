@@ -3,6 +3,7 @@ import { Context, Dict, h, MessageEncoder } from 'koishi';
 import { QQBot } from './bot';
 import { QQGuildBot } from './bot/guild';
 import { logDebug } from './logger';
+import { parseQQMarkdownElement, QQMarkdownRequest } from './markdown';
 
 export const escapeMarkdown = (val: string) =>
   val
@@ -236,12 +237,13 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
   private useMarkdown = false;
   private rows: QQ.Button[][] = [];
   private attachedFile: QQ.Message.File.Response;
+  private customRequest: QQMarkdownRequest;
   private retry = false;
 
   // 先图后文
   async flush()
   {
-    if (!this.content.trim() && !this.rows.flat().length && !this.attachedFile) return;
+    if (!this.content.trim() && !this.rows.flat().length && !this.attachedFile && !this.customRequest) return;
     this.trimButtons();
     let msg_id: string, msg_seq: number, event_id: string;
     if (this.options?.session?.messageId && Date.now() - this.options.session.timestamp < MSG_TIMEOUT)
@@ -256,21 +258,26 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
     if (this.passiveId) msg_id = this.passiveId;
     if (this.passiveSeq) msg_seq = this.passiveSeq;
     if (this.passiveEventId) event_id = this.passiveEventId;
-    const data: QQ.Message.Request = {
+    const data: QQ.Message.Request = this.customRequest ? {
+      ...this.customRequest,
+      msg_id,
+      msg_seq,
+      event_id,
+    } : {
       content: this.content,
       msg_type: QQ.Message.Type.TEXT,
       msg_id,
       msg_seq,
       event_id,
     };
-    if (this.attachedFile)
+    if (!this.customRequest && this.attachedFile)
     {
       if (!data.content.length) data.content = ' ';
       data.media = this.attachedFile;
       data.msg_type = QQ.Message.Type.MEDIA;
     }
 
-    if (this.useMarkdown)
+    if (!this.customRequest && this.useMarkdown)
     {
       data.msg_type = QQ.Message.Type.MARKDOWN;
       delete data.content;
@@ -332,6 +339,8 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
     this.content = '';
     this.attachedFile = null;
     this.rows = [];
+    this.customRequest = null;
+    this.useMarkdown = false;
     this.retry = false;
   }
 
@@ -459,7 +468,13 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
   async visit(element: h)
   {
     const { type, attrs, children } = element;
-    if (type === 'text')
+    const customRequest = parseQQMarkdownElement(element);
+    if (customRequest)
+    {
+      await this.flush();
+      this.customRequest = customRequest;
+      await this.flush();
+    } else if (type === 'text')
     {
       this.content += attrs.content;
     } else if (type === 'passive')

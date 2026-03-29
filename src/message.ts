@@ -4,7 +4,7 @@ import { QQBot } from './bot';
 import { QQGuildBot } from './bot/guild';
 import { logDebug } from './logger';
 import { parseQQMarkdownElement, QQMarkdownRequest } from './markdown';
-import { applyAutoStream, clearAutoStream, updateAutoStream } from './stream';
+import { applyAutoStream, clearAutoStream, createAutoStreamFinalRequest, getAutoStreamFinalDelay, scheduleAutoStreamFinal, updateAutoStream } from './stream';
 
 export const escapeMarkdown = (val: string) =>
   val
@@ -324,16 +324,44 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
     applyAutoStream(this.options.session, data, this.customAutoStream);
     const session = this.bot.session();
     session.type = 'send';
+    const sendRequest = (payload: QQ.Message.Request) =>
+    {
+      return this.session.isDirect
+        ? this.bot.internal.sendPrivateMessage(this.session.channelId, payload)
+        : this.bot.internal.sendMessage(this.session.channelId, payload);
+    };
     const send = async () =>
     {
       try
       {
-        const resp = this.session.isDirect
-          ? await this.bot.internal.sendPrivateMessage(this.session.channelId, data)
-          : await this.bot.internal.sendMessage(this.session.channelId, data);
+        const resp = await sendRequest(data);
         if (resp.id && !resp.audit_id)
         {
           updateAutoStream(this.options.session, data, resp.id);
+          if (this.customAutoStream)
+          {
+            const finalRequest = createAutoStreamFinalRequest(data, resp.id);
+            if (finalRequest)
+            {
+              if (typeof finalRequest.msg_seq === 'number' && this.options?.session?.messageId)
+              {
+                this.options.session['seq'] = finalRequest.msg_seq;
+              }
+              const delay = getAutoStreamFinalDelay(data);
+              scheduleAutoStreamFinal(this.bot.ctx, this.options.session, delay, () =>
+              {
+                void sendRequest(finalRequest)
+                  .catch((error) =>
+                  {
+                    this.bot.logger.warn(error);
+                  })
+                  .finally(() =>
+                  {
+                    clearAutoStream(this.options.session);
+                  });
+              });
+            }
+          }
           session.messageId = resp.id;
           session.timestamp = new Date(resp.timestamp).valueOf();
           session.channelId = this.session.channelId;

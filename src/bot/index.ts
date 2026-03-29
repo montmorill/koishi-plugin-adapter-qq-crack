@@ -35,7 +35,7 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
 {
   static MessageEncoder = QQMessageEncoder;
   static inject = {
-    required: ['http'],
+    required: ['http', 'logger', 'database'],
     optional: ['server'],
   };
 

@@ -13,6 +13,7 @@ export * from './ws';
 
 export const name = 'adapter-qq-crack';
 export const reusable = true;
+export const filter = false;
 export const inject = QQBot.inject;
 export const Config = QQBot.Config;
 

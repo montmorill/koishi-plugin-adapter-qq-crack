@@ -1,29 +1,30 @@
-import * as QQ from '../types'
-import { GroupInternal } from '.'
+import * as QQ from '../types';
+import { GroupInternal } from '.';
 
 declare module './internal' {
-  interface GroupInternal {
+  interface GroupInternal
+  {
     sendMessage(channel_id: string, data: QQ.Message.Request): Promise<{
-      id: string
-      timestamp: string
-      audit_id?: string
-      audit_tips?: string
-    }>
+      id: string;
+      timestamp: string;
+      audit_id?: string;
+      audit_tips?: string;
+    }>;
     sendPrivateMessage(openid: string, data: QQ.Message.Request): Promise<{
-      id: string
-      timestamp: string
-      audit_id?: string
-      audit_tips?: string
-    }>
-    sendFilePrivate(openid: string, data: QQ.Message.File.Request): Promise<any>
-    sendFileGuild(group_openid: string, data: QQ.Message.File.Request): Promise<any>
+      id: string;
+      timestamp: string;
+      audit_id?: string;
+      audit_tips?: string;
+    }>;
+    sendFilePrivate(openid: string, data: QQ.Message.File.Request): Promise<any>;
+    sendFileGuild(group_openid: string, data: QQ.Message.File.Request): Promise<any>;
     acknowledgeInteraction(interaction_id: string, data: {
-      code: number
-    }): Promise<any>
-    getGateway(): Promise<QQ.GetGatewayResponse>
-    getGatewayBot(): Promise<QQ.GetGatewayBotResponse>
-    deleteMessage(openid: string, message_id: string): Promise<any>
-    deletePrivateMessage(userid: string, message_id: string): Promise<any>
+      code: number;
+    }): Promise<any>;
+    getGateway(): Promise<QQ.GetGatewayResponse>;
+    getGatewayBot(): Promise<QQ.GetGatewayBotResponse>;
+    deleteMessage(openid: string, message_id: string): Promise<any>;
+    deletePrivateMessage(userid: string, message_id: string): Promise<any>;
   }
 }
 
@@ -52,11 +53,11 @@ GroupInternal.define(false, {
   '/gateway/bot': {
     GET: 'getGatewayBot',
   },
-})
+});
 
 // fxxk tencent
 GroupInternal.define(false, {
   '/interactions/{interaction.id}': {
     PUT: 'acknowledgeInteraction',
   },
-}, { responseType: 'text' })
+}, { responseType: 'text' });

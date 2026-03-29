@@ -52,9 +52,8 @@ export function createAutoStreamFinalRequest(request: QQ.Message.Request, messag
   {
     return;
   }
-  const { msg_id, event_id, ...rest } = request;
   return {
-    ...rest,
+    ...request,
     ...(typeof request.msg_seq === 'number' ? { msg_seq: request.msg_seq + 1 } : {}),
     stream: {
       state: 10,

@@ -15,4 +15,6 @@ tsconfig.tsbuildinfo
 *.njsproj
 *.sln
 .yarn
-docs
+docs/.vitepress/cache/*
+adapter-yunhupro/src/*
+源码

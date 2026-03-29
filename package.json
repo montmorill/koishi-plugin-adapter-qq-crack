@@ -1,37 +1,23 @@
 {
-  "name": "koishi-plugin-adapter-qq-crack",
-  "description": "QQ Adapter for q.qq.com",
-  "version": "1.0.1",
-  "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
-  "files": [
-    "lib",
-    "src"
-  ],
+  "name": "koishi-plugin-adapter-qq-crack-docs",
+  "version": "0.0.0",
+  "description": "Documentation for koishi-plugin-adapter-qq-crack",
+  "main": "index.js",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/koishi-shangxue-plugins/koishi-plugin-adapter-qq-crack.git",
-    "directory": "adapters/qq"
+  "type": "module",
+  "dependencies": {
+    "@cordisjs/vitepress": "^4.0.1",
+    "@vueuse/core": "^13.0.0",
+    "typescript": "^5.8.2",
+    "vitepress": "^1.6.3",
+    "vue": "3",
+    "vue-tsc": "^2.2.8"
   },
-  "bugs": {
-    "url": "https://github.com/koishi-shangxue-plugins/koishi-plugin-adapter-qq-crack/issues"
-  },
-  "homepage": "https://github.com/koishi-shangxue-plugins/koishi-plugin-adapter-qq-crack",
-  "keywords": [
-    "bot",
-    "qq",
-    "qqbot",
-    "qqguild",
-    "chatbot",
-    "im",
-    "chat"
-  ],
-  "devDependencies": {
-    "@noble/ed25519": "^2.2.3",
-    "koishi": "^4.18.9"
-  },
-  "peerDependencies": {
-    "koishi": "^4.18.9"
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs",
+    "start": "vitepress preview docs",
+    "typecheck": "vue-tsc --noEmit"
   }
 }

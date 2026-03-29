@@ -1,2 +1,18 @@
-# koishi-plugin-adapter-qq-crack
- koishi-plugin-adapter-qq-crack
+# koishi-plugin-adapter-qq-crack 文档
+
+## 本地开发
+
+```bash
+git clone https://github.com/koishi-shangxue-plugins/koishi-plugin-adapter-qq-crack.git
+cd koishi-plugin-adapter-qq-crack
+git checkout docs
+yarn install
+yarn dev
+yarn build
+```
+
+## 文档结构
+
+- `/docs` - 文档源文件
+- `/docs/.vitepress` - VitePress 配置
+- `/docs/markdown` - 各个文档页面

@@ -1,0 +1,33 @@
+{
+  "title": "QQ Adapter Crack",
+  "description": "Koishi QQ 官方适配器插件文档",
+  "ignoreDeadLinks": true,
+  "base": "/koishi-plugin-adapter-qq-crack/",
+  "head": [
+    [
+      "meta",
+      {
+        "name": "theme-color",
+        "content": "#12b7f5"
+      }
+    ]
+  ],
+  "themeConfig": {
+    "socialLinks": {
+      "github": "https://github.com/koishi-shangxue-plugins/koishi-plugin-adapter-qq-crack"
+    },
+    "lastUpdated": {
+      "text": "上次更新"
+    },
+    "editLink": {
+      "pattern": "https://github.com/koishi-shangxue-plugins/koishi-plugin-adapter-qq-crack/edit/docs/docs/:path",
+      "text": "在 GitHub 上编辑此页"
+    },
+    "nav": [
+      {
+        "text": "通用 API",
+        "link": "/markdown/dev/apis"
+      }
+    ]
+  }
+}

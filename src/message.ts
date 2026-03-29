@@ -262,6 +262,7 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
   private passiveSeq: number;
   private passiveEventId: string;
   private useMarkdown = false;
+  private plainTextOnly = true;
   private rows: QQ.Button[][] = [];
   private attachedFile: QQ.Message.File.Response;
   private customRequest: QQMarkdownRequest;
@@ -298,6 +299,15 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
       msg_seq,
       event_id,
     };
+    const autoStreamText = Boolean(
+      this.bot.config.autoStreamText
+      && !this.customRequest
+      && !this.useMarkdown
+      && !this.attachedFile
+      && !this.rows.flat().length
+      && this.plainTextOnly
+      && this.content.trim().length
+    );
     if (!this.customRequest && this.attachedFile)
     {
       if (!data.content.length) data.content = ' ';
@@ -321,7 +331,21 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
         };
       }
     }
-    applyAutoStream(this.options.session, data, this.customAutoStream);
+    if (autoStreamText)
+    {
+      data.msg_type = QQ.Message.Type.MARKDOWN;
+      delete data.content;
+      data.markdown = {
+        content: escapeMarkdown(this.content) || ' ',
+      };
+      delete data.keyboard;
+    }
+    const shouldAutoStream = this.customAutoStream || autoStreamText;
+    if (!shouldAutoStream && !data.stream)
+    {
+      clearAutoStream(this.options.session);
+    }
+    applyAutoStream(this.options.session, data, shouldAutoStream);
     const session = this.bot.session();
     session.type = 'send';
     const sendRequest = (payload: QQ.Message.Request) =>
@@ -338,7 +362,7 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
         if (resp.id && !resp.audit_id)
         {
           updateAutoStream(this.options.session, data, resp.id);
-          if (this.customAutoStream)
+          if (shouldAutoStream)
           {
             const finalRequest = createAutoStreamFinalRequest(data, resp.id);
             if (finalRequest)
@@ -408,6 +432,7 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
     this.customRequest = null;
     this.customAutoStream = false;
     this.useMarkdown = false;
+    this.plainTextOnly = true;
     this.retry = false;
   }
 
@@ -557,17 +582,20 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
       if (attrs.eventId) this.passiveEventId = attrs.eventId;
     } else if ((type === 'img' || type === 'image') && (attrs.src || attrs.url))
     {
+      this.plainTextOnly = false;
       await this.flush();
       const data = await this.sendFile(type, attrs);
       if (data) this.attachedFile = data;
     } else if (type === 'video' && (attrs.src || attrs.url))
     {
+      this.plainTextOnly = false;
       await this.flush();
       const data = await this.sendFile(type, attrs);
       if (data) this.attachedFile = data;
       await this.flush(); // text can't send with video
     } else if (type === 'audio' && (attrs.src || attrs.url))
     {
+      this.plainTextOnly = false;
       await this.flush();
       const { data } = await this.bot.ctx.http.file(attrs.src || attrs.url, attrs);
       if (new TextDecoder().decode(data.slice(0, 7)).includes('#!SILK'))
@@ -625,12 +653,14 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
       if (!this.content.endsWith('\n')) this.content += '\n';
     } else if (type === 'button-group')
     {
+      this.plainTextOnly = false;
       this.useMarkdown = true;
       this.rows.push([]);
       await this.render(children);
       this.rows.push([]);
     } else if (type === 'button')
     {
+      this.plainTextOnly = false;
       this.useMarkdown = true;
       const last = this.lastRow();
       last.push(this.decodeButton(attrs, children.join('')));
@@ -641,6 +671,7 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
       await this.flush();
     } else
     {
+      this.plainTextOnly = false;
       await this.render(children);
     }
   }

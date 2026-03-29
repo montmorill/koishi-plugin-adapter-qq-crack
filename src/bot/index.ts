@@ -1,35 +1,17 @@
-import { Bot, Context, HTTP, Schema, Universal } from 'koishi';
+import { Bot, Context, HTTP, Universal } from 'koishi';
 import { WsClient } from '../ws';
-import * as QQ from '../types';
 import { QQGuildBot } from './guild';
 import { QQMessageEncoder } from '../message';
 import { GroupInternal } from '../internal';
 import { HttpServer } from '../http';
 import { decodeUser } from '../utils';
+import * as AdapterConfig from '../config';
 
 interface GetAppAccessTokenResult
 {
   access_token: string;
   expires_in: number;
 }
-
-type IntentKey = keyof typeof QQ.Intents;
-
-const defaultIntentKeys = [
-  'GUILDS',
-  'GUILD_MEMBERS',
-  'GUILD_MESSAGE_REACTIONS',
-  'DIRECT_MESSAGES',
-  'OPEN_FORUMS_EVENT',
-  'AUDIO_OR_LIVE_CHANNEL_MEMBER',
-  'USER_MESSAGE',
-  'INTERACTIONS',
-  'MESSAGE_AUDIT',
-  'AUDIO_ACTION',
-  'PUBLIC_GUILD_MESSAGES',
-] as const satisfies readonly IntentKey[];
-
-const defaultIntents = defaultIntentKeys.reduce((value, intent) => value | QQ.Intents[intent], 0);
 
 export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.Config> extends Bot<C, T>
 {
@@ -44,8 +26,9 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
   internal: GroupInternal;
   http: HTTP;
 
-  private _token: string;
-  private _timer: NodeJS.Timeout;
+  private _token?: string;
+  private _disposeTokenRefresh?: () => void;
+  private _warnedLegacyAuth = false;
 
   constructor(ctx: C, config: T)
   {
@@ -55,11 +38,10 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
     {
       endpoint = endpoint.replace(/^(https?:\/\/)/, '$1sandbox.');
     }
-    // 如果是 bot 类型, 使用固定 token
     this.http = this.ctx.http.extend({
       endpoint,
       headers: {
-        'Authorization': this.config.authType === 'bot' ? `Bot ${this.config.id}.${this.config.token}` : '',
+        'Authorization': '',
         'X-Union-Appid': this.config.id,
       },
     });
@@ -80,19 +62,25 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
   async initialize()
   {
     const user = await this.guildBot.internal.getMe();
-    // user 在 ws 内设置, http 内未设置, 此处补上
     if (!this.user) this.user = decodeUser(user);
     else Object.assign(this.user, decodeUser(user));
   }
 
   async stop()
   {
-    clearTimeout(this._timer);
+    this._disposeTokenRefresh?.();
     if (this.guildBot)
     {
       delete this.ctx.bots[this.guildBot.sid];
     }
     await super.stop();
+  }
+
+  private warnLegacyAuth()
+  {
+    if (this.config.authType !== 'bot' || this._warnedLegacyAuth) return;
+    this._warnedLegacyAuth = true;
+    this.logger.warn('QQ 官方已禁用固定 Token 鉴权，当前 bot 模式将自动改用 AccessToken。');
   }
 
   async _ensureAccessToken()
@@ -113,12 +101,15 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
       }
       this._token = result.data.access_token;
       this.http.config.headers.Authorization = `QQBot ${this._token}`;
-      // 在上一个 access_token 接近过期的 60 秒内
-      // 重新请求可以获取到一个新的 access_token
-      this._timer = setTimeout(() =>
+      this._disposeTokenRefresh?.();
+      const delay = Math.max(1000, (result.data.expires_in - 40) * 1000);
+      this._disposeTokenRefresh = this.ctx.setTimeout(() =>
       {
-        this._ensureAccessToken();
-      }, (result.data.expires_in - 40) * 1000);
+        void this._ensureAccessToken().catch((error) =>
+        {
+          this.logger.warn(error);
+        });
+      }, delay);
     } catch (e)
     {
       if (!this.ctx.http.isError(e) || !e.response) throw e;
@@ -134,6 +125,19 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
       await this._ensureAccessToken();
     }
     return this._token;
+  }
+
+  async prepareRequestAuthorization()
+  {
+    this.warnLegacyAuth();
+    const token = await this.getAccessToken();
+    this.http.config.headers.Authorization = `QQBot ${token}`;
+  }
+
+  async getWebSocketToken()
+  {
+    this.warnLegacyAuth();
+    return `QQBot ${await this.getAccessToken()}`;
   }
 
   async getLogin()
@@ -161,42 +165,9 @@ export class QQBot<C extends Context = Context, T extends QQBot.Config = QQBot.C
 
 export namespace QQBot
 {
-  export interface BaseConfig extends QQ.Options
-  {
-    intents?: number;
-    retryWhen: number[];
-    manualAcknowledge: boolean;
-    loggerinfo: boolean;
-    protocol: 'websocket' | 'webhook';
-    path?: string;
-    gatewayUrl?: string;
-  }
+  export type BaseConfig = AdapterConfig.BaseConfig;
 
-  export type Config = BaseConfig & (HttpServer.Options | WsClient.Options);
+  export type Config = AdapterConfig.Config;
 
-  export const Config: Schema<Config> = Schema.intersect([
-    Schema.object({
-      id: Schema.string().description('机器人的账号ID。').required(),
-      secret: Schema.string().description('机器人的密钥。').role('secret'),
-      token: Schema.string().description('机器人的令牌。').role('secret'),
-      type: Schema.union(['public', 'private'] as const).description('机器人的类型。').default('public'),
-      sandbox: Schema.boolean().description('是否开启沙箱模式。').default(false),
-      endpoint: Schema.string().role('link').description('要连接的服务器地址。').default('https://api.sgroup.qq.com/'),
-      authType: Schema.union(['bot', 'bearer'] as const).description('采用的验证方式。').default('bearer'),
-      intents: Schema.bitset(QQ.Intents).description('需要订阅的机器人事件。').default(defaultIntents),
-      retryWhen: Schema.array(Number).description('发送消息遇到平台错误码时重试。').default([]),
-      protocol: Schema.union(['websocket', 'webhook']).description('选择要使用的协议。').default('websocket'),
-    }),
-    Schema.union([
-      WsClient.Options,
-      HttpServer.Options,
-    ]),
-    Schema.object({
-      manualAcknowledge: Schema.boolean().description('手动响应回调消息。').default(false),
-      gatewayUrl: Schema.string().role('link').description('覆写 WebSocket 地址。'),
-    }).description('高级设置'),
-    Schema.object({
-      loggerinfo: Schema.boolean().default(false).description('调试模式').experimental(),
-    }).description('调试设置'),
-  ] as const);
+  export const Config = AdapterConfig.Config;
 }

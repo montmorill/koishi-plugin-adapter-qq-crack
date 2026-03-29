@@ -359,7 +359,7 @@ function parseJsonMessage(attrs: Dict, children: readonly h[])
             ? keyboardSource
             : typeof attrs.content === 'string'
               ? attrs.content
-      : extractMarkdownText(children).trim();
+              : extractMarkdownText(children).trim();
   const keyboard = parseKeyboard(keyboardSource) || (templateId ? { id: templateId } : undefined);
   if (!keyboard?.id)
   {

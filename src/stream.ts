@@ -9,9 +9,7 @@ interface StreamState
 
 const streamStates = new WeakMap<object, StreamState>();
 
-const AUTO_STREAM_DELAY_INTERCEPT = 1200;
-const AUTO_STREAM_DELAY_SLOPE = 15;
-const AUTO_STREAM_DELAY_MAX = 15000;
+const AUTO_STREAM_FINAL_DELAY = 2000;
 
 export function applyAutoStream(session: object | undefined, request: QQ.Message.Request, enabled?: boolean)
 {
@@ -42,15 +40,10 @@ export function updateAutoStream(session: object | undefined, request: QQ.Messag
   });
 }
 
-function getRequestTextLength(request: QQ.Message.Request)
-{
-  return request.markdown?.content?.length ?? request.content?.length ?? 0;
-}
-
-// 根据文本长度线性估算结束流式消息的延迟。
 export function getAutoStreamFinalDelay(request: QQ.Message.Request)
 {
-  return Math.min(AUTO_STREAM_DELAY_MAX, AUTO_STREAM_DELAY_INTERCEPT + getRequestTextLength(request) * AUTO_STREAM_DELAY_SLOPE);
+  void request;
+  return AUTO_STREAM_FINAL_DELAY;
 }
 
 export function createAutoStreamFinalRequest(request: QQ.Message.Request, messageId?: string)

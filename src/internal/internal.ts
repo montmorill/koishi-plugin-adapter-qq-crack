@@ -1,6 +1,27 @@
 import { Bot, Dict, HTTP, makeArray } from 'koishi';
 import { logDebug } from '../logger';
 
+interface AuthorizationBot extends Bot
+{
+  prepareRequestAuthorization: () => Promise<void>;
+}
+
+function hasAuthorizationHook(bot: Bot): bot is AuthorizationBot
+{
+  const target = bot as Bot & { prepareRequestAuthorization?: unknown; };
+  return typeof target.prepareRequestAuthorization === 'function';
+}
+
+function getAuthorizationHost(bot: Bot)
+{
+  if (hasAuthorizationHook(bot)) return bot;
+  const target = bot as Bot & { parent?: Bot; };
+  if (target.parent && hasAuthorizationHook(target.parent))
+  {
+    return target.parent;
+  }
+}
+
 export class Internal
 {
   constructor(private bot: Bot, private http: () => HTTP) { }
@@ -14,20 +35,21 @@ export class Internal
         const method = key as HTTP.Method;
         for (const name of makeArray(routes[path][method]))
         {
-          (isGuild ? GuildInternal : GroupInternal).prototype[name] = async function (this: Internal, ...args: any[])
+          (isGuild ? GuildInternal : GroupInternal).prototype[name] = async function (this: Internal, ...args: unknown[])
           {
             const raw = args.join(', ');
             const url = path.replace(/\{([^}]+)\}/g, () =>
             {
               if (!args.length) throw new Error(`too few arguments for ${path}, received ${raw}`);
-              return args.shift();
+              const value = args.shift();
+              return String(value);
             });
             const config: HTTP.RequestConfig = { ...preset };
             if (args.length === 1)
             {
               if (method === 'GET' || method === 'DELETE')
               {
-                config.params = args[0];
+                config.params = args[0] as Dict;
               } else
               {
                 config.data = args[0];
@@ -35,10 +57,15 @@ export class Internal
             } else if (args.length === 2 && method !== 'GET' && method !== 'DELETE')
             {
               config.data = args[0];
-              config.params = args[1];
+              config.params = args[1] as Dict;
             } else if (args.length > 1)
             {
               throw new Error(`too many arguments for ${path}, received ${raw}`);
+            }
+            const authorizationHost = getAuthorizationHost(this.bot);
+            if (authorizationHost)
+            {
+              await authorizationHost.prepareRequestAuthorization();
             }
             const http = this.http();
             try

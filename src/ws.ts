@@ -8,12 +8,12 @@ export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, Q
 {
   _sessionId = '';
   _s: number = null;
-  _ping: NodeJS.Timeout;
+  _disposeHeartbeat?: () => void;
   _acked = true;
 
   async prepare()
   {
-    if (this.bot.config.authType === 'bearer') await this.bot.getAccessToken();
+    await this.bot.prepareRequestAuthorization();
     try
     {
       const url = this.bot.config.gatewayUrl
@@ -56,9 +56,7 @@ export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, Q
       }
       if (parsed.op === Opcode.HELLO)
       {
-        const token = this.bot.config.authType === 'bearer'
-          ? `QQBot ${await this.bot.getAccessToken()}`
-          : `Bot ${this.bot.config.id}.${this.bot.config.token}`;
+        const token = await this.bot.getWebSocketToken();
         if (this._sessionId)
         {
           this.socket.send(JSON.stringify({
@@ -80,7 +78,8 @@ export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, Q
             },
           }));
         }
-        this._ping = setInterval(() => this.heartbeat(), parsed.d.heartbeat_interval);
+        this._disposeHeartbeat?.();
+        this._disposeHeartbeat = this.bot.ctx.setInterval(() => this.heartbeat(), parsed.d.heartbeat_interval);
       } else if (parsed.op === Opcode.HEARTBEAT_ACK)
       {
         this._acked = true;
@@ -131,7 +130,8 @@ export class WsClient<C extends Context = Context> extends Adapter.WsClient<C, Q
         this._sessionId = '';
         this._s = null;
       }
-      clearInterval(this._ping);
+      this._disposeHeartbeat?.();
+      this._disposeHeartbeat = null;
     });
   }
 }

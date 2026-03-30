@@ -454,9 +454,10 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
   {
     const url = attrs.src || attrs.url;
     let file_type = 0;
-    if (type === 'img' || type === 'image') file_type = 1;
-    else if (type === 'video') file_type = 2;
-    else if (type === 'audio') file_type = 3;
+    if (type === 'img' || type === 'image') file_type = QQ.Message.File.Type.IMAGE;
+    else if (type === 'video') file_type = QQ.Message.File.Type.VIDEO;
+    else if (type === 'audio') file_type = QQ.Message.File.Type.AUDIO;
+    else if (type === 'file') file_type = QQ.Message.File.Type.FILE;
     else return;
     const data: QQ.Message.File.Request = {
       file_type,
@@ -574,7 +575,7 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
       if (attrs.messageId) this.passiveId = attrs.messageId;
       if (attrs.seq) this.passiveSeq = Number(attrs.seq);
       if (attrs.eventId) this.passiveEventId = attrs.eventId;
-    } else if ((type === 'img' || type === 'image') && (attrs.src || attrs.url))
+    } else if ((type === 'img' || type === 'image' || type === 'file') && (attrs.src || attrs.url))
     {
       this.plainTextOnly = false;
       await this.flush();

@@ -373,7 +373,7 @@ export namespace Message
   export interface ArkObj
   {
     /** ark objkv 列表 */
-    objKv: ArkObjKv[];
+    obj_kv: ArkObjKv[];
   }
   export interface ArkObjKv
   {

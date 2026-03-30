@@ -7,6 +7,7 @@ import { parseQQMarkdownElement, QQMarkdownRequest } from './markdown';
 import { applyAutoStream, clearAutoStream, updateAutoStream } from './stream';
 import { fromPrivateChannelId } from './channel';
 import { registerMessageReference, resolveMessageReference } from './reference';
+import { parseQQArkElement } from './ark';
 
 export const escapeMarkdown = (val: string) =>
   val
@@ -551,8 +552,15 @@ export class QQMessageEncoder<C extends Context = Context> extends MessageEncode
   async visit(element: h)
   {
     const { type, attrs, children } = element;
+    const arkPayload = parseQQArkElement(element);
     const customPayload = parseQQMarkdownElement(element);
-    if (customPayload)
+    if (arkPayload)
+    {
+      await this.flush();
+      this.customRequest = arkPayload.request;
+      clearAutoStream(this.options.session);
+      await this.flush();
+    } else if (customPayload)
     {
       await this.flush();
       this.customRequest = customPayload.request;

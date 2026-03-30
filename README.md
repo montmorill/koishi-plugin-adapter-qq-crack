@@ -6,6 +6,7 @@
 
 - 仅使用 AccessToken 鉴权，不再保留旧固定 Token 模式
 - 支持 qq:json、qq:markdown、qq:rawmarkdown、qq:rawmarkdown-without-keyboard
+- 支持 qq:ark、qq:ark24、qq:ark23、qq:ark37
 - 兼容 h('markdown', ...) 直接走 QQ 原生 Markdown
 - 支持 private:${userId} 私聊频道 ID 方案
 - 支持将 WebSocket 消息中的用户名写回 Koishi 数据库并回填到 session.username

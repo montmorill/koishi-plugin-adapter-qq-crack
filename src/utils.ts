@@ -1,7 +1,7 @@
 import { Bot, Context, h, Session, Universal } from 'koishi';
 import * as QQ from './types';
 import { QQBot } from './bot';
-import { patchSessionUserName } from './user';
+import { patchSessionUserName, scheduleUserNameWrite } from './user';
 import { toPrivateChannelId } from './channel';
 import { extractReferenceFromExt, registerMessageReference } from './reference';
 
@@ -60,6 +60,11 @@ export function decodeGroupMessage(
       content = content.replace(/&lt;@([0-9A-Z]{32})&gt;/g,
         (raw, id) => mentions.has(id) ? h.at(id).toString() : raw);
       message.elements.push(...h.parse(content));
+
+      if (!bot.config.disableUserNamePersist)
+        for (const mention of data.mentions)
+          if (mention.scope === 'single' && mention.username)
+            scheduleUserNameWrite(bot, mention.id, mention.username);
     }
     else { message.elements.push(h.text(data.content)); }
   }

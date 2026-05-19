@@ -52,10 +52,11 @@ export function decodeGroupMessage(
     if (data.mentions?.length)
     {
       let content = h.escape(data.content);
-      if (data.mentions.some(m => m.id === 'all'))
+      const mentions = new Set(data.mentions
+        .map(m => m.scope === 'single' ? m.id : 'all'));
+      if (mentions.has('all'))
         content = content.replace(/&lt;@all&gt;/g,
           h('at', { type: 'all' }).toString());
-      const mentions = new Set(data.mentions.map(m => m.id));
       content = content.replace(/&lt;@([0-9A-Z]{32})&gt;/g,
         (raw, id) => mentions.has(id) ? h.at(id).toString() : raw);
       message.elements.push(...h.parse(content));
